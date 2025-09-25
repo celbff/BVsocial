@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -26,7 +25,6 @@ export default tseslint.config(
       ],
     },
   }
-=======
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -54,5 +52,5 @@ export default tseslint.config(
       ],
     },
   }
->>>>>>> da638fb (atualizar arquivos com npm install)
+da638fb (atualizar arquivos com npm install)
 );

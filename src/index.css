@@ -1,8 +1,11 @@
-<<<<<<< HEAD
+/* src/index.css */
 @tailwind base;
 @tailwind components;
-=======
-@tailwind base;
-@tailwind components;
->>>>>>> da638fb (atualizar arquivos com npm install)
 @tailwind utilities;
+
+/* Correção para Leaflet */
+.leaflet-container {
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
