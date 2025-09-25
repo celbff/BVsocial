@@ -1,3 +1,4 @@
+HEAD
 # BVsocial
 # Project Setup
     
@@ -8,4 +9,4 @@
     3. Run `npm run dev` to start the development server.
     
     This project was generated through Alpha. For more information, visit [dualite.dev](https://dualite.dev).
-da638fb (atualizar arquivos com npm install)
+>>>>>>> da638fb (atualizar arquivos com npm install)

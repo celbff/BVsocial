@@ -1,90 +1,84 @@
+// src/pages/NotificationsPage.tsx
 import React, { useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus } from 'lucide-react';
-import Navbar from '../components/Navbar';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
-import { Link } from 'react-router-dom';
-
-const NotificationIcon = ({ type }) => {
-  switch (type) {
-    case 'like': return <Heart className="w-full h-full text-red-500" />;
-    case 'comment': return <MessageCircle className="w-full h-full text-blue-500" />;
-    case 'follow': return <UserPlus className="w-full h-full text-green-500" />;
-    default: return null;
-  }
-};
-
-const NotificationText = ({ notification }) => {
-  const baseText = <span className="font-semibold">{notification.sender.username}</span>;
-  switch (notification.type) {
-    case 'like': return <>{baseText} curtiu sua foto.</>;
-    case 'comment': return <>{baseText} comentou sua foto.</>;
-    case 'follow': return <>{baseText} começou a seguir você.</>;
-    default: return 'Nova notificação.';
-  }
-};
 
 const NotificationsPage = () => {
-  const { notifications, markAllAsRead, fetchNotifications } = useNotifications();
+  const navigate = useNavigate();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
 
   useEffect(() => {
-    fetchNotifications();
-    return () => {
-      markAllAsRead();
-    };
-  }, []);
+    if (unreadCount > 0) {
+      markAllAsRead(); // Opcional: marcar todas ao abrir
+    }
+  }, [unreadCount, markAllAsRead]);
 
-  const getTimeAgo = (date) => {
-    const now = new Date();
-    const seconds = Math.floor((now - new Date(date)) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return `${Math.floor(interval)}a`;
-    interval = seconds / 86400;
-    if (interval > 1) return `${Math.floor(interval)}d`;
-    interval = seconds / 3600;
-    if (interval > 1) return `${Math.floor(interval)}h`;
-    interval = seconds / 60;
-    if (interval > 1) return `${Math.floor(interval)}min`;
-    return `${Math.floor(seconds)}s`;
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'like':
+        return '❤️';
+      case 'comment':
+        return '💬';
+      case 'follow':
+        return '👥';
+      case 'message':
+        return '📩';
+      default:
+        return '🔔';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar />
-      <div className="lg:ml-64 pb-16 lg:pb-0">
-        <div className="max-w-2xl mx-auto px-4 py-6">
-          <div className="mb-6"><h1 className="text-2xl font-semibold">Notificações</h1></div>
-          <div className="space-y-1">
-            {notifications.map((notification, index) => (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className={`flex items-center p-4 hover:bg-gray-50 transition-colors rounded-lg ${!notification.is_read ? 'bg-blue-50' : ''}`}
-              >
-                <Link to={`/profile/${notification.sender.username}`} className="flex-shrink-0">
-                  <img src={notification.sender.avatar_url} alt={notification.sender.username} className="w-10 h-10 rounded-full mr-3"/>
-                </Link>
-                <div className="w-6 h-6 mr-3 flex-shrink-0"><NotificationIcon type={notification.type} /></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm"><NotificationText notification={notification} /></p>
-                  <p className="text-xs text-gray-500 mt-1">{getTimeAgo(notification.created_at)}</p>
-                </div>
-                {notification.post_id && notification.post?.image_url && (
-                  <img src={notification.post.image_url} alt="Post" className="w-12 h-12 rounded object-cover ml-3"/>
-                )}
-                {!notification.is_read && <div className="w-2 h-2 bg-blue-500 rounded-full ml-3 flex-shrink-0"></div>}
-              </motion.div>
-            ))}
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center">
+            <button onClick={() => navigate(-1)} className="mr-4 text-gray-600 text-xl">
+              ←
+            </button>
+            <h1 className="text-lg font-semibold">Notificações</h1>
           </div>
-          {notifications.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">Nenhuma notificação por aqui.</p>
-            </div>
+          {notifications.length > 0 && (
+            <button
+              onClick={markAllAsRead}
+              className="text-emerald-600 text-sm font-medium"
+            >
+              Marcar tudo como lido
+            </button>
           )}
         </div>
-      </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-6">
+        {notifications.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4">🔕</div>
+            <h2 className="text-lg font-medium text-gray-800">Nenhuma notificação</h2>
+            <p className="text-gray-500 mt-2">
+              Você será notificado quando alguém interagir com você.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-xl border ${
+                  notification.read ? 'bg-white border-gray-200' : 'bg-blue-50 border-blue-200'
+                }`}
+              >
+                <div className="flex items-start space-x-3">
+                  <span className="text-xl">{getIcon(notification.type)}</span>
+                  <div className="flex-1">
+                    <p className="text-gray-800">{notification.message}</p>
+                    <p className="text-xs text-gray-500 mt-1">{notification.created_at}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
