@@ -16,7 +16,7 @@ const LoginPage = () => {
   const pixKey = "lunara_terapias@jim.com";
   const qrBaseUrl = "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=";
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -40,7 +40,7 @@ const LoginPage = () => {
         alert('Verifique seu e-mail para confirmar o cadastro.');
       }
       navigate('/');
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Erro ao processar a solicitação. Tente novamente.');
     } finally {
       setLoading(false);
@@ -54,14 +54,14 @@ const LoginPage = () => {
         provider: 'google',
       });
       if (error) throw error;
-    } catch (err) {
+    } catch (err: any) {
       setError(err?.message || 'Erro ao fazer login com o Google.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === 'email') setEmail(value);
     if (name === 'password') setPassword(value);
@@ -76,7 +76,7 @@ const LoginPage = () => {
     }
   };
 
-  const setValor = (valor) => {
+  const setValor = (valor: string) => {
     setValorPersonalizado(valor);
   };
 
