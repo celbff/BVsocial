@@ -71,7 +71,7 @@ const LoginPage = () => {
           <img
             src="/og-image.jpg"
             alt="Fachada do Condomínio Bella Vitta"
-            className="w-full h-full object-cover"
+            className="w-300 h-200 object-cover"
           />
           {/* Overlay escuro para contraste com o texto */}
           <div className="absolute inset-0 bg-black bg-opacity-30"></div>
