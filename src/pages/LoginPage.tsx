@@ -1,4 +1,7 @@
+// src/pages/LoginPage.tsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -10,30 +13,34 @@ const LoginPage = () => {
   const [valorPersonalizado, setValorPersonalizado] = useState('');
 
   const pixKey = "lunara_terapias@jim.com";
+  const navigate = useNavigate();
 
-  // Simulação das funções do Supabase
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      // Simulação de login/registro
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       if (isLogin) {
-        if (email && password) {
-          console.log('Login realizado com sucesso');
-          // navigate('/');
-        } else {
-          throw new Error('Email e senha são obrigatórios');
-        }
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
       } else {
-        console.log('Cadastro realizado - verifique seu e-mail');
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+        if (error) throw error;
         alert('Verifique seu e-mail para confirmar o cadastro.');
       }
-    } catch (err) {
-      setError(err?.message || 'Erro ao processar a solicitação. Tente novamente.');
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Erro ao processar a solicitação. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -42,10 +49,12 @@ const LoginPage = () => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Login com Google realizado');
-    } catch (err) {
-      setError(err?.message || 'Erro ao fazer login com o Google.');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || 'Erro ao fazer login com o Google.');
     } finally {
       setLoading(false);
     }
@@ -60,7 +69,7 @@ const LoginPage = () => {
     }
   };
 
-  const setValor = (valor) => {
+  const setValor = (valor: string) => {
     setValorPersonalizado(valor);
   };
 
@@ -82,7 +91,7 @@ const LoginPage = () => {
             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-3 border-white shadow-xl bg-gradient-to-r from-blue-500 to-purple-600 p-1">
               <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
                 <img
-                  src="ccRlIKgO8pqXoxJqdHrsV"
+                  src="/og-image2.jpg"
                   alt="Bella Vitta"
                   className="w-full h-full object-cover rounded-full"
                 />
@@ -129,7 +138,7 @@ const LoginPage = () => {
                   name="email"
                   placeholder="Email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder-gray-400"
                   required
                 />
@@ -141,7 +150,7 @@ const LoginPage = () => {
                   name="password"
                   placeholder="Senha"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm placeholder-gray-400"
                   required
                 />
@@ -296,7 +305,7 @@ const LoginPage = () => {
                   type="number"
                   id="valorPersonalizado"
                   value={valorPersonalizado}
-                  onChange={(e) => setValorPersonalizado(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValorPersonalizado(e.target.value)}
                   placeholder="Digite o valor"
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
                 />
@@ -323,7 +332,7 @@ const LoginPage = () => {
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2z"></path>
                   </svg>
                   Copiar PIX
                 </button>
