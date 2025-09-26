@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import DonationButton from '../components/DonationButton';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -163,6 +164,9 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Botão de doação */}
+      <DonationButton />
     </div>
   );
 };
