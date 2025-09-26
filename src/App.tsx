@@ -1,5 +1,4 @@
 // src/App.tsx
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -13,6 +12,7 @@ import NotificationsPage from './pages/NotificationsPage';
 import MapPage from './pages/MapPage';
 import CreatePostPage from './pages/CreatePostPage';
 import SubscriptionPage from './pages/SubscriptionPage';
+import SavedPostsPage from './pages/SavedPostsPage';
 
 function App() {
   return (
@@ -21,85 +21,20 @@ function App() {
         <Router>
           <div className="min-h-screen bg-white">
             <Routes>
-              {/* Rota pública: Login */}
               <Route path="/login" element={<LoginPage />} />
-
-              {/* Rota pública: Mapa (SEM restrição PREMIUM) */}
               <Route path="/map" element={<MapPage />} />
-
-              {/* Rotas protegidas por autenticação */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <HomePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile/:username"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/explore"
-                element={
-                  <ProtectedRoute>
-                    <ExplorePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/messages"
-                element={
-                  <ProtectedRoute>
-                    <MessagesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/messages/:userId"
-                element={
-                  <ProtectedRoute>
-                    <MessagesPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/notifications"
-                element={
-                  <ProtectedRoute>
-                    <NotificationsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/create"
-                element={
-                  <ProtectedRoute>
-                    <CreatePostPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/subscription"
-                element={
-                  <ProtectedRoute>
-                    <SubscriptionPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/saved"
-                element={
-                  <ProtectedRoute>
-                    <SavedPostsPage />
-                  </ProtectedRoute>
-                }
-              />
+              
+              {/* Rotas protegidas usando layout wrapper */}
+              <Route element={<ProtectedRoute />}>
+                <Route index element={<HomePage />} />
+                <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/explore" element={<ExplorePage />} />
+                <Route path="/messages/*" element={<MessagesPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/create" element={<CreatePostPage />} />
+                <Route path="/saved" element={<SavedPostsPage />} />
+                <Route path="/subscription" element={<SubscriptionPage />} />
+              </Route>
             </Routes>
           </div>
         </Router>

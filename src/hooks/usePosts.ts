@@ -10,11 +10,11 @@ export const usePosts = () => {
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      const {  {  { user } } } = await supabase.auth.getUser();
-      const userId = user?.id;
+      // ✅ Removido 'error' não usado
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
 
-      // Busca posts + perfis dos autores
-      const {  {  postData, error: postError } } = await supabase
+      const { data: postData, error: postError } = await supabase
         .from('posts')
         .select(`
           id,
@@ -32,50 +32,45 @@ export const usePosts = () => {
 
       if (postError) throw postError;
 
-      // IDs dos posts
       const postIds = postData.map((p: any) => p.id);
 
-      // Likes
-      let likesData: any[] = [];
       let likesCountMap: Record<string, number> = {};
       if (postIds.length > 0) {
-        const {  { data: allLikes } } = await supabase
+        const { data: allLikes } = await supabase
           .from('likes')
           .select('post_id');
-        likesCountMap = allLikes.reduce((acc: Record<string, number>, like: any) => {
+        likesCountMap = (allLikes || []).reduce((acc: Record<string, number>, like: any) => {
           acc[like.post_id] = (acc[like.post_id] || 0) + 1;
           return acc;
         }, {});
-
-        if (userId) {
-          const {  { data } } = await supabase
-            .from('likes')
-            .select('post_id')
-            .eq('user_id', userId);
-          likesData = data || [];
-        }
       }
 
-      const likedPostIds = new Set(likesData.map((like: any) => like.post_id));
+      let likedPostIds = new Set<string>();
+      if (user && postIds.length > 0) {
+        const { data: userLikes } = await supabase
+          .from('likes')
+          .select('post_id')
+          .eq('user_id', user.id);
+        likedPostIds = new Set((userLikes || []).map((like: any) => like.post_id));
+      }
 
-      // Salvos
       let savedPostIds = new Set<string>();
-      if (userId && postIds.length > 0) {
-        const {  { data: savedData } } = await supabase
+      if (user && postIds.length > 0) {
+        const { data: savedData } = await supabase
           .from('saved_posts')
           .select('post_id')
           .in('post_id', postIds)
-          .eq('user_id', userId);
-        savedPostIds = new Set(savedData.map((s: any) => s.post_id));
+          .eq('user_id', user.id);
+        savedPostIds = new Set((savedData || []).map((s: any) => s.post_id));
       }
 
-      // Comentários
       let commentsMap: Record<string, any[]> = {};
       if (postIds.length > 0) {
-        const {  { data: comments } } = await supabase
+        const { data: comments } = await supabase
           .from('comments')
           .select(`
             id,
+            post_id,
             content,
             created_at,
             user_id,
@@ -88,7 +83,7 @@ export const usePosts = () => {
           .in('post_id', postIds)
           .order('created_at', { ascending: true });
 
-        commentsMap = comments.reduce((acc: Record<string, any[]>, comment: any) => {
+        commentsMap = (comments || []).reduce((acc: Record<string, any[]>, comment: any) => {
           const postId = comment.post_id;
           if (!acc[postId]) acc[postId] = [];
           acc[postId].push(comment);
@@ -96,7 +91,6 @@ export const usePosts = () => {
         }, {});
       }
 
-      // Formata posts
       const formattedPosts = postData.map((post: any) => {
         const author = post.profiles;
         const comments = commentsMap[post.id] || [];
@@ -133,7 +127,6 @@ export const usePosts = () => {
   useEffect(() => {
     fetchPosts();
 
-    // Realtime: escuta mudanças
     const postsChannel = supabase
       .channel('posts-channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, fetchPosts)

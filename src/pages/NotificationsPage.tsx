@@ -1,15 +1,16 @@
 // src/pages/NotificationsPage.tsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  // ✅ Removido 'markAsRead' não usado
+  const { notifications, unreadCount, markAllAsRead } = useNotifications();
 
   useEffect(() => {
     if (unreadCount > 0) {
-      markAllAsRead(); // Opcional: marcar todas ao abrir
+      markAllAsRead();
     }
   }, [unreadCount, markAllAsRead]);
 

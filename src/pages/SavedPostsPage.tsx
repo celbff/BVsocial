@@ -1,5 +1,4 @@
 // src/pages/SavedPostsPage.tsx
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '../components/PostCard';
 import { useSavedPosts } from '../hooks/useSavedPosts';

@@ -1,12 +1,10 @@
 // src/pages/MapPage.tsx
-// Remover 'React' do import
+// ✅ Removido imports não usados
 const MapPage = () => {
-  // URL embed do Google My Maps (modo público, sem login necessário)
   const mapEmbedUrl = "https://www.google.com/maps/d/u/0/embed?mid=1XFELlB7i9JmH3FVd6wR3O8HQ1nAdTSo&ehbc=2E312F";
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div>
@@ -19,7 +17,6 @@ const MapPage = () => {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-grow container mx-auto px-4 py-6">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           <div className="p-4 md:p-6 border-b border-gray-200">
@@ -43,7 +40,6 @@ const MapPage = () => {
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="bg-gray-800 text-white py-5">
         <div className="container mx-auto px-4 text-center text-sm">
           <p>© {new Date().getFullYear()} Bella Vitta. Todos os direitos reservados.</p>

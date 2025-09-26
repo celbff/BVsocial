@@ -21,20 +21,20 @@ export const useConversations = () => {
   const fetchConversations = async () => {
     setLoading(true);
     try {
-      const {  {  { user } } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) {
         setConversations([]);
         setLoading(false);
         return;
       }
+      const user = data.user;
 
-      // Busca mensagens onde o usuário é remetente ou destinatário
-      const {  {  { data: messages, error } } } = await supabase
+      const { data: rpcData, error: rpcError } = await supabase
         .rpc('get_user_conversations', { current_user_id: user.id });
 
-      if (error) throw error;
+      if (rpcError) throw rpcError;
 
-      const formatted = messages.map((m: any) => ({
+      const formatted = rpcData.map((m: any) => ({
         id: m.other_user_id,
         other_user_id: m.other_user_id,
         other_user: {

@@ -18,7 +18,7 @@ export const useProfile = (username: string) => {
     setLoading(true);
     setError(null);
     try {
-      const {  { data, error: fetchError } } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('username', username)

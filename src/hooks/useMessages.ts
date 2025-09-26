@@ -28,10 +28,11 @@ export const useMessages = (otherUserId: string | null) => {
 
     setLoading(true);
     try {
-      const {  {  { user } } } = await supabase.auth.getUser();
-      if (!user) return;
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data?.user) return;
+      const user = data.user;
 
-      const {  {  { data, error } } } = await supabase
+      const { data: messagesData, error: fetchError } = await supabase
         .from('messages')
         .select(`
           id,
@@ -47,9 +48,9 @@ export const useMessages = (otherUserId: string | null) => {
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      const formatted = data.map((m: any) => ({
+      const formatted = messagesData.map((m: any) => ({
         id: m.id,
         sender_id: m.sender_id,
         sender: {
