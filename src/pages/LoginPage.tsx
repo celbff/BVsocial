@@ -89,7 +89,7 @@ const LoginPage = () => {
         <div className="text-center mb-8">
           <div className="relative mx-auto mb-6">
             <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border-3 border-white shadow-xl bg-gradient-to-r from-blue-500 to-purple-600 p-1">
-              <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-white p-0.5">
                 <img
                   src="/og-image2.jpg"
                   alt="Bella Vitta"
