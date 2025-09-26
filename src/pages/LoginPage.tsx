@@ -63,51 +63,73 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">
-          {isLogin ? 'Entrar' : 'Criar Conta'}
-        </h1>
-
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={email}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              required
-            />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
+        
+        {/* Miniatura da fachada */}
+        <div className="relative h-40 w-full">
+          <img
+            src="/og-image.jpg"
+            alt="Fachada do Condomínio Bella Vitta"
+            className="w-full h-full object-cover"
+          />
+          {/* Overlay escuro para contraste com o texto */}
+          <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+          {/* Título sobreposto */}
+          <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+            <h1 className="text-2xl font-bold">Bella Vitta</h1>
+            <p className="mt-1 text-sm opacity-90">Serviços e Vendas em Araraquara/SP</p>
           </div>
-          <div>
-            <input
-              type="password"
-              name="password"
-              placeholder="Senha"
-              value={password}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {loading ? 'Carregando...' : isLogin ? 'Entrar' : 'Registrar'}
-          </button>
-        </form>
+        </div>
 
-        <div className="mt-4">
+        {/* Formulário */}
+        <div className="p-8 space-y-6">
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="email"
+                name="email"
+                placeholder="Email"
+                value={email}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                required
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                name="password"
+                placeholder="Senha"
+                value={password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-emerald-600 text-white py-3 rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition font-medium"
+            >
+              {loading ? 'Carregando...' : isLogin ? 'Entrar' : 'Registrar'}
+            </button>
+          </form>
+
+          {/* Divider */}
+          <div className="flex items-center my-6">
+            <div className="flex-1 border-t border-gray-300"></div>
+            <span className="px-4 text-gray-500 text-sm">ou</span>
+            <div className="flex-1 border-t border-gray-300"></div>
+          </div>
+
+          {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -129,14 +151,17 @@ const LoginPage = () => {
             </svg>
             Continuar com Google
           </button>
-        </div>
 
-        <button
-          onClick={() => setIsLogin(!isLogin)}
-          className="mt-4 text-emerald-600 hover:underline block mx-auto"
-        >
-          {isLogin ? 'Criar conta' : 'Já tenho conta'}
-        </button>
+          {/* Toggle */}
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-emerald-600 hover:underline font-medium"
+            >
+              {isLogin ? 'Criar conta' : 'Já tenho conta'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
