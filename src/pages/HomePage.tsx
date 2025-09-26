@@ -4,7 +4,6 @@ import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/PostCard';
 import { usePosts } from '../hooks/usePosts';
 import { usePWAInstall } from '../hooks/usePWAInstall'; // <-- Novo hook
-import DonationButton from '../components/DonationButton';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -58,9 +57,6 @@ const HomePage = () => {
           </svg>
         </button>
       )}
-
-      {/* Botão de doação */}
-      <DonationButton />
     </div>
   );
 };
