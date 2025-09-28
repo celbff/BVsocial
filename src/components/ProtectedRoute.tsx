@@ -2,7 +2,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = () => {
+interface ProtectedRouteProps {
+  children?: React.ReactNode;
+}
+
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -17,7 +21,7 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default ProtectedRoute;
