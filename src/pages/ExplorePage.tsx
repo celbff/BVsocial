@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect } from 'react';  // Removido 'React' da importação
 
 interface Post {
@@ -397,7 +396,6 @@ const ExplorePage = () => {
   );
 };
 
-=======
 import React, { useState, useEffect } from 'react';
 
 interface Post {
@@ -796,5 +794,4 @@ const ExplorePage = () => {
   );
 };
 
->>>>>>> 147c96675ed3d33f3ef6f393346a34f96ae65ba2
 export default ExplorePage;

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React from 'react';
 import { ArrowLeft, Check, Crown, Star, Zap, Heart, MessageCircle, Grid3X3, Bookmark } from 'lucide-react';
 
@@ -229,7 +228,6 @@ const SubscriptionPage = () => {
   );
 };
 
-=======
 import React from 'react';
 import { ArrowLeft, Check, Crown, Star, Zap, Heart, MessageCircle, Grid3X3, Bookmark } from 'lucide-react';
 
@@ -459,6 +457,4 @@ const SubscriptionPage = () => {
     </div>
   );
 };
-
->>>>>>> 147c96675ed3d33f3ef6f393346a34f96ae65ba2
 export default SubscriptionPage;
