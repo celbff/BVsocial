@@ -1,132 +1,84 @@
-import { useState, useEffect } from 'react';  // Removido 'React' da importação
+// src/pages/ExplorePage.tsx
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface Post {
   id: string;
   user_id: string;
-  author: string;
   username: string;
-  avatar: string;
+  avatar_url: string;
   content: string;
-  image: string;
-  timestamp: string;
-  likes: number;
-  liked: boolean;
-  saved: boolean;
-  comments: number;
+  image_url: string | null;
+  created_at: string;
+  likes_count: number;
+  liked_by_user: boolean;
+  saved_by_user: boolean;
+  comments_count: number;
   views: number;
 }
 
 const ExplorePage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Simular dados de posts com imagens
-  const mockPosts: Post[] = [
-    {
-      id: '1',
-      user_id: '1',
-      author: 'Maria Silva',
-      username: 'maria_silva',
-      avatar: 'keys/avatar1?prompt=young woman profile photo instagram style',
-      content: 'Aproveitando o dia ensolarado! ☀️',
-      image: 'keys/explore1?prompt=sunny day outdoor lifestyle photo instagram style',
-      timestamp: '2024-01-15',
-      likes: 342,
-      liked: false,
-      saved: false,
-      comments: 12,
-      views: 1250
-    },
-    {
-      id: '2',
-      user_id: '2',
-      author: 'João Santos',
-      username: 'joao_santos',
-      avatar: 'keys/avatar2?prompt=young man profile photo instagram style',
-      content: 'Novo projeto concluído! 🎨',
-      image: 'keys/explore2?prompt=creative workspace art project instagram style',
-      timestamp: '2024-01-14',
-      likes: 186,
-      liked: true,
-      saved: false,
-      comments: 8,
-      views: 890
-    },
-    {
-      id: '3',
-      user_id: '3',
-      author: 'Ana Costa',
-      username: 'ana_costa',
-      avatar: 'keys/avatar3?prompt=young woman profile photo instagram style',
-      content: 'Café da manhã perfeito! ☕',
-      image: 'keys/explore3?prompt=aesthetic breakfast coffee instagram style',
-      timestamp: '2024-01-13',
-      likes: 521,
-      liked: false,
-      saved: true,
-      comments: 23,
-      views: 2100
-    },
-    {
-      id: '4',
-      user_id: '4',
-      author: 'Pedro Lima',
-      username: 'pedro_lima',
-      avatar: 'keys/avatar4?prompt=young man profile photo instagram style',
-      content: 'Vista incrível da cidade 🏙️',
-      image: 'keys/explore4?prompt=city skyline view instagram style',
-      timestamp: '2024-01-12',
-      likes: 765,
-      liked: false,
-      saved: false,
-      comments: 31,
-      views: 3200
-    },
-    {
-      id: '5',
-      user_id: '5',
-      author: 'Camila Rocha',
-      username: 'camila_rocha',
-      avatar: 'keys/avatar5?prompt=young woman profile photo instagram style',
-      content: 'Momento de relaxamento 🧘‍♀️',
-      image: 'keys/explore5?prompt=yoga meditation wellness instagram style',
-      timestamp: '2024-01-11',
-      likes: 294,
-      liked: true,
-      saved: true,
-      comments: 15,
-      views: 980
-    },
-    {
-      id: '6',
-      user_id: '6',
-      author: 'Rafael Alves',
-      username: 'rafael_alves',
-      avatar: 'keys/avatar6?prompt=young man profile photo instagram style',
-      content: 'Treino concluído! 💪',
-      image: 'keys/explore6?prompt=fitness gym workout instagram style',
-      timestamp: '2024-01-10',
-      likes: 445,
-      liked: false,
-      saved: false,
-      comments: 18,
-      views: 1560
+  // Busca posts públicos
+  const fetchPosts = async (search: string = '') => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          profiles!inner(username, avatar_url),
+          likes_count:likes(count),
+          liked_by_user:likes!inner(user_id),
+          saved_by_user:saves!inner(user_id),
+          comments_count:comments(count)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Aplica filtro de busca se houver termo
+      if (search) {
+        query = query.ilike('content', `%${search}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const formattedPosts = (data || []).map(post => ({
+        id: post.id,
+        user_id: post.user_id,
+        username: post.profiles.username,
+        avatar_url: post.profiles.avatar_url || '/default-avatar.png',
+        content: post.content,
+        image_url: post.image_url,
+        created_at: new Date(post.created_at).toLocaleDateString('pt-BR'),
+        likes_count: post.likes_count?.count || 0,
+        liked_by_user: post.liked_by_user.length > 0,
+        saved_by_user: post.saved_by_user.length > 0,
+        comments_count: post.comments_count?.count || 0,
+        views: 0, // Pode ser implementado depois
+      }));
+
+      setPosts(formattedPosts);
+    } catch (err) {
+      console.error('Erro ao buscar posts:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      setLoading(true);
-      // Simular carregamento
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setPosts(mockPosts);
-      setLoading(false);
-    };
-
-    fetchPosts();
-  }, []);
+    fetchPosts(searchTerm);
+  }, [searchTerm, user]);
 
   const handlePostClick = (post: Post) => {
     setSelectedPost(post);
@@ -136,46 +88,122 @@ const ExplorePage = () => {
     setSelectedPost(null);
   };
 
-  const handleLike = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, liked: !post.liked, likes: post.liked ? post.likes - 1 : post.likes + 1 }
-        : post
-    ));
+  const handleLike = async (postId: string, currentlyLiked: boolean) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (currentlyLiked) {
+        await supabase
+          .from('likes')
+          .delete()
+          .match({ post_id: postId, user_id: user.id });
+      } else {
+        await supabase
+          .from('likes')
+          .insert({ post_id: postId, user_id: user.id });
+      }
+
+      // Atualiza localmente
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? {
+              ...post,
+              liked_by_user: !currentlyLiked,
+              likes_count: currentlyLiked ? post.likes_count - 1 : post.likes_count + 1
+            }
+          : post
+      ));
+
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          liked_by_user: !currentlyLiked,
+          likes_count: currentlyLiked ? selectedPost.likes_count - 1 : selectedPost.likes_count + 1
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao curtir:', err);
+    }
   };
 
-  const handleSave = (postId: string) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, saved: !post.saved }
-        : post
-    ));
+  const handleSave = async (postId: string, currentlySaved: boolean) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (currentlySaved) {
+        await supabase
+          .from('saves')
+          .delete()
+          .match({ post_id: postId, user_id: user.id });
+      } else {
+        await supabase
+          .from('saves')
+          .insert({ post_id: postId, user_id: user.id });
+      }
+
+      // Atualiza localmente
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? { ...post, saved_by_user: !currentlySaved }
+          : post
+      ));
+
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          saved_by_user: !currentlySaved
+        });
+      }
+    } catch (err) {
+      console.error('Erro ao salvar:', err);
+    }
   };
 
   const MenuFooter = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
       <div className="flex justify-around py-2 px-4">
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center justify-center p-2 text-black"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/create')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
           </div>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/notifications')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/profile/me')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 rounded-full bg-gray-300"></div>
         </button>
       </div>
@@ -190,11 +218,17 @@ const ExplorePage = () => {
         <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col md:flex-row">
           {/* Image Section */}
           <div className="md:w-2/3 bg-black flex items-center justify-center">
-            <img
-              src={post.image}
-              alt="Post"
-              className="max-w-full max-h-full object-contain"
-            />
+            {post.image_url ? (
+              <img
+                src={post.image_url}
+                alt="Post"
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <div className="text-white text-center p-4">
+                {post.content}
+              </div>
+            )}
           </div>
           
           {/* Content Section */}
@@ -203,7 +237,7 @@ const ExplorePage = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <div className="flex items-center gap-3">
                 <img
-                  src={post.avatar}
+                  src={post.avatar_url}
                   alt={post.username}
                   className="w-8 h-8 rounded-full object-cover"
                 />
@@ -220,7 +254,7 @@ const ExplorePage = () => {
             <div className="flex-1 p-4 overflow-y-auto">
               <div className="flex gap-3 mb-4">
                 <img
-                  src={post.avatar}
+                  src={post.avatar_url}
                   alt={post.username}
                   className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                 />
@@ -235,31 +269,35 @@ const ExplorePage = () => {
             <div className="border-t border-gray-200 p-4">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex gap-4">
-                  <button onClick={() => handleLike(post.id)}>
+                  <button onClick={() => handleLike(post.id, post.liked_by_user)}>
                     <svg 
-                      className={`w-6 h-6 ${post.liked ? 'text-red-500 fill-current' : 'text-gray-700'}`} 
-                      fill={post.liked ? "currentColor" : "none"} 
+                      className={`w-6 h-6 ${post.liked_by_user ? 'text-red-500 fill-current' : 'text-gray-700'}`} 
+                      fill={post.liked_by_user ? "currentColor" : "none"} 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                     </svg>
                   </button>
-                  <button>
+                  <button onClick={() => navigate(`/posts/${post.id}`)}>
                     <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                     </svg>
                   </button>
-                  <button>
+                  <button onClick={() => {
+                    const url = `${window.location.origin}/posts/${post.id}`;
+                    navigator.clipboard.writeText(url);
+                    alert('Link copiado!');
+                  }}>
                     <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                     </svg>
                   </button>
                 </div>
-                <button onClick={() => handleSave(post.id)}>
+                <button onClick={() => handleSave(post.id, post.saved_by_user)}>
                   <svg 
-                    className={`w-6 h-6 ${post.saved ? 'text-gray-900 fill-current' : 'text-gray-700'}`} 
-                    fill={post.saved ? "currentColor" : "none"} 
+                    className={`w-6 h-6 ${post.saved_by_user ? 'text-gray-900 fill-current' : 'text-gray-700'}`} 
+                    fill={post.saved_by_user ? "currentColor" : "none"} 
                     stroke="currentColor" 
                     viewBox="0 0 24 24"
                   >
@@ -269,11 +307,11 @@ const ExplorePage = () => {
               </div>
               
               <div className="text-sm font-semibold mb-1">
-                {post.likes.toLocaleString()} curtidas
+                {post.likes_count.toLocaleString()} curtidas
               </div>
               
               <div className="text-xs text-gray-500 uppercase tracking-wide">
-                {post.timestamp}
+                {post.created_at}
               </div>
             </div>
           </div>
@@ -290,8 +328,9 @@ const ExplorePage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
-                onClick={() => console.log('Voltar')}
+                onClick={() => navigate(-1)}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors md:hidden"
+                aria-label="Voltar"
               >
                 <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -342,11 +381,17 @@ const ExplorePage = () => {
                 className="aspect-square bg-gray-100 relative cursor-pointer group overflow-hidden"
                 onClick={() => handlePostClick(post)}
               >
-                <img
-                  src={post.image}
-                  alt=""
-                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                />
+                {post.image_url ? (
+                  <img
+                    src={post.image_url}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center p-2">
+                    <span className="text-gray-600 text-xs text-center">{post.content.substring(0, 50)}...</span>
+                  </div>
+                )}
                 
                 {/* Overlay on hover */}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
@@ -355,35 +400,19 @@ const ExplorePage = () => {
                       <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                       </svg>
-                      <span className="font-semibold">{post.likes}</span>
+                      <span className="font-semibold">{post.likes_count}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
                         <path d="M21,6H3A1,1 0 0,0 2,7V17A1,1 0 0,0 3,18H8.5L12,21.5L15.5,18H21A1,1 0 0,0 22,17V7A1,1 0 0,0 21,6M21,16H14.5L12,18.5L9.5,16H3V8H21V16Z"/>
                       </svg>
-                      <span className="font-semibold">{post.comments}</span>
+                      <span className="font-semibold">{post.comments_count}</span>
                     </div>
                   </div>
                 </div>
                 
-                {/* Multiple images indicator */}
-                {post.id === '1' && (
-                  <div className="absolute top-2 right-2">
-                    <svg className="w-4 h-4 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11.5-6L8 13h12l-3.5-5-2.5 3.01L10.5 10z"/>
-                      <path d="M2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/>
-                    </svg>
-                  </div>
-                )}
-                
-                {/* Video indicator */}
-                {post.id === '4' && (
-                  <div className="absolute top-2 right-2">
-                    <svg className="w-4 h-4 text-white drop-shadow" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
-                  </div>
-                )}
+                {/* Multiple images indicator - pode ser implementado com campo 'type' */}
+                {/* Video indicator - pode ser implementado com campo 'type' */}
               </div>
             ))}
           </div>

@@ -1,4 +1,8 @@
+// src/pages/ProfilePage.tsx
 import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface Profile {
   id: string;
@@ -24,6 +28,10 @@ interface Post {
 }
 
 const ProfilePage = () => {
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,89 +39,157 @@ const ProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
 
-  // Dados simulados do perfil
-  const mockProfile: Profile = {
-    id: '1',
-    username: 'maria_silva',
-    full_name: 'Maria Silva',
-    avatar_url: 'keys/profile-avatar?prompt=young woman profile photo instagram style professional',
-    bio: '🌟 Fotógrafa & Designer\n📍 São Paulo, Brasil\n☕️ Coffee lover\n🎨 Criatividade em cada detalhe',
-    website: 'www.mariasilva.com',
-    posts_count: 127,
-    followers_count: 2543,
-    following_count: 890,
-    is_verified: true,
-    is_private: false,
-    is_own: false
+  // Busca perfil do usuário
+  const fetchProfile = async () => {
+    if (!username) return;
+
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          username,
+          full_name,
+          avatar_url,
+          bio,
+          website,
+          is_verified,
+          is_private
+        `)
+        .eq('username', username)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Contagem de posts
+      const { count: postsCount } = await supabase
+        .from('posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', profileData.id);
+
+      // Contagem de seguidores
+      const { count: followersCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', profileData.id);
+
+      // Contagem de seguindo
+      const { count: followingCount } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', profileData.id);
+
+      const isOwn = user?.id === profileData.id;
+
+      // Verifica se o usuário logado segue este perfil
+      let followingStatus = false;
+      if (user && !isOwn) {
+        const { data: followData } = await supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', user.id)
+          .eq('following_id', profileData.id)
+          .single();
+
+        followingStatus = !!followData;
+      }
+
+      setProfile({
+        id: profileData.id,
+        username: profileData.username,
+        full_name: profileData.full_name || profileData.username,
+        avatar_url: profileData.avatar_url || '/default-avatar.png',
+        bio: profileData.bio || '',
+        website: profileData.website || '',
+        posts_count: postsCount || 0,
+        followers_count: followersCount || 0,
+        following_count: followingCount || 0,
+        is_verified: profileData.is_verified || false,
+        is_private: profileData.is_private || false,
+        is_own: isOwn,
+      });
+
+      setIsFollowing(followingStatus);
+    } catch (err) {
+      console.error('Erro ao buscar perfil:', err);
+    }
   };
 
-  // Dados simulados de posts
-  const mockPosts: Post[] = [
-    {
-      id: '1',
-      image_url: 'keys/post1?prompt=aesthetic photography instagram post lifestyle',
-      likes: 234,
-      comments: 12,
-      type: 'image'
-    },
-    {
-      id: '2',
-      image_url: 'keys/post2?prompt=creative design project instagram post',
-      likes: 186,
-      comments: 8,
-      type: 'carousel'
-    },
-    {
-      id: '3',
-      image_url: 'keys/post3?prompt=coffee aesthetic instagram post',
-      likes: 521,
-      comments: 23,
-      type: 'image'
-    },
-    {
-      id: '4',
-      image_url: 'keys/post4?prompt=urban photography instagram post',
-      likes: 765,
-      comments: 31,
-      type: 'video'
-    },
-    {
-      id: '5',
-      image_url: 'keys/post5?prompt=nature photography instagram post',
-      likes: 294,
-      comments: 15,
-      type: 'image'
-    },
-    {
-      id: '6',
-      image_url: 'keys/post6?prompt=design workspace instagram post',
-      likes: 445,
-      comments: 18,
-      type: 'image'
+  // Busca posts do usuário
+  const fetchPosts = async () => {
+    if (!profile) return;
+
+    try {
+      // ✅ CORREÇÃO 1: 'postData' → 'data'
+      const { data, error: postError } = await supabase
+        .from('posts')
+        .select('id, image_url')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (postError) throw postError;
+
+      // Para simplificar, assumimos que todos são 'image'
+      // Em produção, você pode ter um campo 'type' na tabela
+      // ✅ CORREÇÃO 2: adicionar tipagem explícita a 'post'
+      const formattedPosts: Post[] = (data || []).map((post: any) => ({
+        id: post.id,
+        image_url: post.image_url || '/default-post.png',
+        likes: 0, // Pode buscar de uma tabela de likes
+        comments: 0, // Pode buscar de uma tabela de comments
+        type: 'image',
+      }));
+
+      setPosts(formattedPosts);
+    } catch (err) {
+      console.error('Erro ao buscar posts:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setProfile(mockProfile);
-      setPosts(mockPosts);
-      setLoading(false);
-    };
+    if (username) {
+      fetchProfile();
+    }
+  }, [username, user]);
 
-    loadData();
-  }, []);
-
-  const handleFollow = () => {
-    setIsFollowing(!isFollowing);
+  useEffect(() => {
     if (profile) {
-      setProfile({
-        ...profile,
-        followers_count: isFollowing 
-          ? profile.followers_count - 1 
-          : profile.followers_count + 1
+      fetchPosts();
+    }
+  }, [profile]);
+
+  const handleFollow = async () => {
+    if (!user || !profile || profile.is_own) return;
+
+    try {
+      if (isFollowing) {
+        // Deixar de seguir
+        await supabase
+          .from('follows')
+          .delete()
+          .match({ follower_id: user.id, following_id: profile.id });
+      } else {
+        // Seguir
+        await supabase
+          .from('follows')
+          .insert({ follower_id: user.id, following_id: profile.id });
+      }
+
+      // Atualiza localmente
+      setIsFollowing(!isFollowing);
+      setProfile(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          followers_count: isFollowing 
+            ? prev.followers_count - 1 
+            : prev.followers_count + 1
+        };
       });
+    } catch (err) {
+      console.error('Erro ao seguir/deixar de seguir:', err);
     }
   };
 
@@ -129,27 +205,42 @@ const ProfilePage = () => {
   const MenuFooter = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
       <div className="flex justify-around py-2 px-4">
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/create')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
           </div>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/notifications')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/profile/me')}
+          className="flex flex-col items-center justify-center p-2 text-black"
+        >
           <div className="w-6 h-6 rounded-full bg-black"></div>
         </button>
       </div>
@@ -169,7 +260,12 @@ const ProfilePage = () => {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 text-lg">Perfil não encontrado</p>
-          <button className="mt-4 text-blue-500">Voltar</button>
+          <button 
+            onClick={() => navigate(-1)}
+            className="mt-4 text-blue-500"
+          >
+            Voltar
+          </button>
         </div>
       </div>
     );
@@ -183,8 +279,9 @@ const ProfilePage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button 
-                onClick={() => console.log('Voltar')}
+                onClick={() => navigate(-1)}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Voltar"
               >
                 <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -203,6 +300,7 @@ const ProfilePage = () => {
             <button 
               onClick={() => setShowOptionsModal(true)}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Opções"
             >
               <svg className="w-6 h-6 text-gray-900" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
@@ -247,10 +345,19 @@ const ProfilePage = () => {
               <div className="flex gap-2">
                 {profile.is_own ? (
                   <>
-                    <button className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors">
+                    <button 
+                      onClick={() => navigate('/profile/edit')}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors"
+                    >
                       Editar perfil
                     </button>
-                    <button className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors">
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/profile/${profile.username}`);
+                        alert('Link copiado!');
+                      }}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors"
+                    >
                       Compartilhar perfil
                     </button>
                   </>
@@ -266,7 +373,10 @@ const ProfilePage = () => {
                     >
                       {isFollowing ? 'Seguindo' : 'Seguir'}
                     </button>
-                    <button className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors">
+                    <button 
+                      onClick={() => navigate(`/messages/${profile.username}`)}
+                      className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-900 py-2 px-4 rounded-lg font-semibold text-sm transition-colors"
+                    >
                       Mensagem
                     </button>
                     <button className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg flex items-center justify-center transition-colors">
@@ -285,7 +395,12 @@ const ProfilePage = () => {
             <h2 className="font-semibold text-gray-900 mb-1">{profile.full_name}</h2>
             <div className="text-gray-900 text-sm whitespace-pre-line mb-2">{profile.bio}</div>
             {profile.website && (
-              <a href={profile.website} className="text-blue-500 text-sm hover:underline">
+              <a 
+                href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 text-sm hover:underline"
+              >
                 {profile.website}
               </a>
             )}
@@ -344,6 +459,7 @@ const ProfilePage = () => {
                 <div
                   key={post.id}
                   className="aspect-square bg-gray-100 relative cursor-pointer group overflow-hidden"
+                  onClick={() => navigate(`/posts/${post.id}`)}
                 >
                   <img
                     src={post.image_url}
@@ -413,10 +529,28 @@ const ProfilePage = () => {
               <div className="w-12 h-1 bg-gray-300 rounded mx-auto md:hidden"></div>
             </div>
             <div className="py-2">
-              <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors">
+              <button 
+                className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/profile/${profile.username}`);
+                  alert('Link copiado!');
+                  setShowOptionsModal(false);
+                }}
+              >
                 <span className="text-gray-900">Copiar link do perfil</span>
               </button>
-              <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors">
+              <button 
+                className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: `Perfil de ${profile.username}`,
+                      url: `${window.location.origin}/profile/${profile.username}`
+                    });
+                  }
+                  setShowOptionsModal(false);
+                }}
+              >
                 <span className="text-gray-900">Compartilhar perfil</span>
               </button>
               <button className="w-full p-4 text-left hover:bg-gray-50 transition-colors">

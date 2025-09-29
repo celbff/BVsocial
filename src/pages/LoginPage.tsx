@@ -27,6 +27,7 @@ const LoginPage = () => {
           password,
         });
         if (error) throw error;
+        navigate('/');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -36,9 +37,10 @@ const LoginPage = () => {
           },
         });
         if (error) throw error;
+        // Não redireciona após cadastro
         alert('Verifique seu e-mail para confirmar o cadastro.');
+        setIsLogin(true); // Opcional: volta para o modo login
       }
-      navigate('/');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || 'Erro ao processar a solicitação. Tente novamente.');
@@ -57,6 +59,7 @@ const LoginPage = () => {
         provider: 'google',
       });
       if (error) throw error;
+      // O redirecionamento é tratado pelo callback do OAuth
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message || 'Erro ao fazer login com o Google.');

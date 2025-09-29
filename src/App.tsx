@@ -16,9 +16,9 @@ import SavedPostsPage from './pages/SavedPostsPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <NotificationProvider>
           <div className="min-h-screen bg-white">
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -37,9 +37,9 @@ function App() {
               </Route>
             </Routes>
           </div>
-        </Router>
-      </NotificationProvider>
-    </AuthProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

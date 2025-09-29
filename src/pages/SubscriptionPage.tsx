@@ -1,11 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ Adicionado
 import { ArrowLeft, Check, Crown, Star, Zap, Heart, MessageCircle, Grid3X3, Bookmark } from 'lucide-react';
 
 const SubscriptionPage = () => {
+  const navigate = useNavigate(); // ✅ Adicionado
+
   const [loading, setLoading] = React.useState(false);
   const [selectedPlan, setSelectedPlan] = React.useState('premium');
 
-  const handleSubscribe = async (plan: string) => {  // Adicionado tipo 'string' para o parâmetro 'plan'
+  const handleSubscribe = async (plan: string) => {
     setLoading(true);
     try {
       // Simular inscrição
@@ -97,7 +100,7 @@ const SubscriptionPage = () => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => navigate(-1)} // ✅ Corrigido
             className="p-1"
           >
             <ArrowLeft size={24} className="text-gray-900" />

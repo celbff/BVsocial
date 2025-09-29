@@ -1,8 +1,23 @@
+// src/pages/MapPage.tsx
 import React from 'react';
-import { ArrowLeft, MapPin, Navigation, Share2, Heart, MessageCircle, Grid3X3, Bookmark, ExternalLink } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  MapPin, 
+  Navigation, 
+  Share2, 
+  Heart, 
+  MessageCircle, 
+  Grid3X3, 
+  Bookmark, 
+  ExternalLink 
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const MapPage = () => {
   const [loading, setLoading] = React.useState(true);
+  const navigate = useNavigate();
+
+  // URL do mapa embed (sem espaços)
   const mapEmbedUrl = "https://www.google.com/maps/d/u/0/embed?mid=1XFELlB7i9JmH3FVd6wR3O8HQ1nAdTSo&ehbc=2E312F";
 
   const handleMapLoad = () => {
@@ -10,41 +25,78 @@ const MapPage = () => {
   };
 
   const handleShare = () => {
+    const shareData = {
+      title: 'Bella Vitta - Mapa de Atendimento',
+      text: 'Confira nossa área de cobertura em Araraquara/SP',
+      url: window.location.href,
+    };
+
     if (navigator.share) {
-      navigator.share({
-        title: 'Bella Vitta - Mapa de Atendimento',
-        text: 'Confira nossa área de cobertura em Araraquara/SP',
-        url: window.location.href,
+      navigator.share(shareData).catch((error) => {
+        console.warn('Erro ao compartilhar:', error);
+        fallbackCopyTextToClipboard(shareData.url);
       });
     } else {
-      // Fallback para navegadores que não suportam Web Share API
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado para a área de transferência!');
+      fallbackCopyTextToClipboard(shareData.url);
     }
   };
 
+  const fallbackCopyTextToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Link copiado para a área de transferência!');
+    }).catch(() => {
+      prompt('Copie este link:', text);
+    });
+  };
+
   const handleOpenInMaps = () => {
-    window.open('https://maps.google.com/maps?q=Araraquara,+SP', '_blank');
+    // ✅ Corrigido: removido espaço no início da URL
+    const mapsUrl = 'https://maps.google.com/maps?q=Araraquara,+SP';
+    window.open(mapsUrl, '_blank', 'noopener,noreferrer');
   };
 
   const FooterMenu = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+    <div 
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50"
+      role="navigation"
+      aria-label="Menu de navegação principal"
+    >
       <div className="flex justify-around items-center max-w-lg mx-auto">
-        <div className="flex flex-col items-center py-2">
-          <Grid3X3 size={24} className="text-gray-400" />
-        </div>
-        <div className="flex flex-col items-center py-2">
-          <Heart size={24} className="text-gray-400" />
-        </div>
-        <div className="flex flex-col items-center py-2">
-          <MessageCircle size={24} className="text-gray-400" />
-        </div>
-        <div className="flex flex-col items-center py-2">
-          <Bookmark size={24} className="text-gray-400" />
-        </div>
-        <div className="flex flex-col items-center py-2">
-          <MapPin size={24} className="text-gray-900 fill-current" />
-        </div>
+        <button 
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center py-2 text-gray-400 hover:text-gray-900 transition-colors"
+          aria-label="Início"
+        >
+          <Grid3X3 size={24} />
+        </button>
+        <button 
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center py-2 text-gray-400 hover:text-gray-900 transition-colors"
+          aria-label="Explorar"
+        >
+          <Heart size={24} />
+        </button>
+        <button 
+          onClick={() => navigate('/messages')}
+          className="flex flex-col items-center py-2 text-gray-400 hover:text-gray-900 transition-colors"
+          aria-label="Mensagens"
+        >
+          <MessageCircle size={24} />
+        </button>
+        <button 
+          onClick={() => navigate('/saved')}
+          className="flex flex-col items-center py-2 text-gray-400 hover:text-gray-900 transition-colors"
+          aria-label="Salvos"
+        >
+          <Bookmark size={24} />
+        </button>
+        <button 
+          className="flex flex-col items-center py-2 text-gray-900"
+          aria-current="page"
+          aria-label="Mapa"
+        >
+          <MapPin size={24} className="fill-current" />
+        </button>
       </div>
     </div>
   );
@@ -55,15 +107,17 @@ const MapPage = () => {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 py-3 max-w-lg mx-auto">
           <button
-            onClick={() => window.history.back()}
-            className="p-1"
+            onClick={() => navigate(-1)}
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Voltar"
           >
             <ArrowLeft size={24} className="text-gray-900" />
           </button>
           <h1 className="text-lg font-semibold text-gray-900">Mapa</h1>
           <button
             onClick={handleShare}
-            className="p-1"
+            className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Compartilhar mapa"
           >
             <Share2 size={24} className="text-gray-900" />
           </button>
@@ -91,7 +145,7 @@ const MapPage = () => {
       <main className="max-w-lg mx-auto pb-20">
         <div className="relative bg-gray-100">
           {loading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-50">
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-50 bg-opacity-90">
               <div className="flex flex-col items-center space-y-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                 <span className="text-sm text-gray-600">Carregando mapa...</span>
@@ -111,6 +165,10 @@ const MapPage = () => {
               referrerPolicy="no-referrer-when-downgrade"
               onLoad={handleMapLoad}
               className="w-full h-full"
+              onError={() => {
+                setLoading(false);
+                console.error('Erro ao carregar o mapa');
+              }}
             />
           </div>
         </div>
@@ -127,6 +185,7 @@ const MapPage = () => {
             <button
               onClick={handleOpenInMaps}
               className="flex-1 bg-gray-900 text-white py-3 px-4 rounded-lg font-semibold text-sm flex items-center justify-center space-x-2 hover:bg-gray-800 transition-colors"
+              aria-label="Abrir no Google Maps"
             >
               <Navigation size={16} />
               <span>Abrir no Maps</span>
@@ -134,6 +193,7 @@ const MapPage = () => {
             <button
               onClick={handleShare}
               className="bg-gray-100 text-gray-900 py-3 px-4 rounded-lg font-semibold text-sm flex items-center justify-center hover:bg-gray-200 transition-colors"
+              aria-label="Compartilhar localização"
             >
               <ExternalLink size={16} />
             </button>

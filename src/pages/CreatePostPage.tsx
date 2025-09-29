@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+// src/pages/CreatePostPage.tsx
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 const CreatePostPage = () => {
   const [content, setContent] = useState('');
@@ -6,7 +10,17 @@ const CreatePostPage = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [step, setStep] = useState<'select' | 'edit' | 'share'>('select'); // 'select', 'edit', 'share'
+  const [step, setStep] = useState<'select' | 'edit' | 'share'>('select');
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Redireciona para login se não estiver autenticado
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -46,14 +60,18 @@ const CreatePostPage = () => {
       setStep('select');
       handleRemoveImage();
     } else {
-      // Voltar para página anterior
-      console.log('Navegando para página anterior');
+      navigate(-1); // Volta para a página anterior
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!user) {
+      setError('Você precisa estar logado para publicar.');
+      return;
+    }
+
     if (!content.trim() && !imageFile) {
       setError('Adicione um texto ou uma imagem.');
       return;
@@ -63,16 +81,34 @@ const CreatePostPage = () => {
     setError(null);
 
     try {
-      // Simular upload e criação do post
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Limpar e simular redirecionamento
-      setContent('');
-      setImageFile(null);
-      setImagePreview(null);
-      setStep('select');
-      
-      alert('Post publicado com sucesso!');
+      let imageUrl = '';
+
+      // Upload da imagem (se houver)
+      if (imageFile) {
+        const fileName = `${user.id}/${Date.now()}-${imageFile.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('posts')
+          .upload(fileName, imageFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage.from('posts').getPublicUrl(fileName);
+        imageUrl = data.publicUrl;
+      }
+
+      // Salvar post no banco de dados
+      const { error: postError } = await supabase
+        .from('posts')
+        .insert({
+          user_id: user.id,
+          content: content.trim(),
+          image_url: imageUrl || null,
+        });
+
+      if (postError) throw postError;
+
+      // ✅ Redireciona para a página principal após sucesso
+      navigate('/');
     } catch (err) {
       console.error('Erro ao criar post:', err);
       setError('Erro ao publicar. Tente novamente.');
@@ -81,30 +117,46 @@ const CreatePostPage = () => {
     }
   };
 
+  // Menu inferior de navegação (apenas em mobile)
   const MenuFooter = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
       <div className="flex justify-around py-3">
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        <button
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/create')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
           </div>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+        <button
+          onClick={() => navigate('/notifications')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/profile/meu-usuario')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 rounded-full bg-gray-300"></div>
         </button>
       </div>
@@ -112,7 +164,7 @@ const CreatePostPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-white md:bg-gray-50">
+    <div className="min-h-screen bg-white md:bg-gray-50 pb-16 md:pb-0">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-md mx-auto md:max-w-4xl px-4 py-3 flex items-center justify-between">
@@ -233,9 +285,13 @@ const CreatePostPage = () => {
             <div className={`p-4 ${imagePreview ? 'md:w-1/2' : 'w-full'}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">U</span>
+                  <span className="text-white text-sm font-semibold">
+                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                  </span>
                 </div>
-                <span className="font-semibold text-sm">usuario</span>
+                <span className="font-semibold text-sm">
+                  {user?.email?.split('@')[0] || 'usuário'}
+                </span>
               </div>
               
               <textarea

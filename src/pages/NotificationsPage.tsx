@@ -5,14 +5,13 @@ import { useNotifications } from '../contexts/NotificationContext';
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
-  // ✅ Removido 'markAsRead' não usado
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
 
   useEffect(() => {
     if (unreadCount > 0 && markAllAsRead) {
       markAllAsRead();
     }
-  }, [unreadCount, markAllAsRead]);
+  }, [markAllAsRead]); // ✅ Removido 'unreadCount' para evitar chamadas repetidas
 
   const getIcon = (type: string) => {
     switch (type) {

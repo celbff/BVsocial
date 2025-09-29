@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+// src/pages/MessagesPage.tsx
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface OtherUser {
   id: string;
@@ -26,108 +30,119 @@ interface Message {
 }
 
 const MessagesPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Dados simulados
-  const mockConversations: Conversation[] = [
-    {
-      id: '1',
-      other_user_id: '1',
-      other_user: {
-        id: '1',
-        username: 'maria_silva',
-        full_name: 'Maria Silva',
-        avatar_url: 'keys/user1?prompt=young woman profile photo instagram style',
-        is_online: true
-      },
-      last_message: 'Oi! Como você está?',
-      last_message_at: '2h',
-      unread_count: 2
-    },
-    {
-      id: '2',
-      other_user_id: '2',
-      other_user: {
-        id: '2',
-        username: 'joao_santos',
-        full_name: 'João Santos',
-        avatar_url: 'keys/user2?prompt=young man profile photo instagram style',
-        is_online: false
-      },
-      last_message: 'Obrigado pela dica!',
-      last_message_at: '1d',
-      unread_count: 0
-    },
-    {
-      id: '3',
-      other_user_id: '3',
-      other_user: {
-        id: '3',
-        username: 'ana_costa',
-        full_name: 'Ana Costa',
-        avatar_url: 'keys/user3?prompt=young woman profile photo instagram style',
-        is_online: true
-      },
-      last_message: 'Vamos marcar um café? ☕️',
-      last_message_at: '3d',
-      unread_count: 1
+  // Busca conversas do usuário
+  const fetchConversations = async () => {
+    if (!user) return;
+
+    try {
+      // Busca conversas (última mensagem de cada)
+      const { data: conversationsData, error: convError } = await supabase
+        .rpc('get_user_conversations', { user_id_input: user.id });
+
+      if (convError) throw convError;
+
+      const formattedConversations: Conversation[] = (conversationsData || []).map((conv: any) => ({ // ✅ Corrigido: added type
+        id: conv.conversation_id,
+        other_user_id: conv.other_user_id,
+        other_user: {
+          id: conv.other_user_id,
+          username: conv.username || 'usuário',
+          full_name: conv.full_name || conv.username || 'Usuário',
+          avatar_url: conv.avatar_url || '/default-avatar.png',
+          is_online: false, // Pode ser implementado com presença em tempo real
+        },
+        last_message: conv.last_message_content || 'Nova conversa',
+        last_message_at: conv.last_message_at 
+          ? new Date(conv.last_message_at).toLocaleDateString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+          : 'Agora',
+        unread_count: 0, // Pode ser implementado com tabela de leituras
+      }));
+
+      setConversations(formattedConversations);
+    } catch (err) {
+      console.error('Erro ao buscar conversas:', err);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const mockMessages: Record<string, Message[]> = {
-    '1': [
-      {
-        id: '1',
-        sender_id: '1',
-        content: 'Oi! Como você está?',
-        created_at: '2024-01-15T10:00:00Z',
-        is_own: false
-      },
-      {
-        id: '2',
-        sender_id: 'current',
-        content: 'Oi Maria! Tudo bem, e você?',
-        created_at: '2024-01-15T10:01:00Z',
-        is_own: true
-      },
-      {
-        id: '3',
-        sender_id: '1',
-        content: 'Tudo ótimo! Vi suas fotos das viagens, que lugares incríveis! 😍',
-        created_at: '2024-01-15T10:02:00Z',
-        is_own: false
-      }
-    ],
-    '2': [
-      {
-        id: '4',
-        sender_id: 'current',
-        content: 'Que bom que gostou da dica!',
-        created_at: '2024-01-14T14:00:00Z',
-        is_own: true
-      },
-      {
-        id: '5',
-        sender_id: '2',
-        content: 'Obrigado pela dica!',
-        created_at: '2024-01-14T14:30:00Z',
-        is_own: false
-      }
-    ],
-    '3': [
-      {
-        id: '6',
-        sender_id: '3',
-        content: 'Vamos marcar um café? ☕️',
-        created_at: '2024-01-12T16:00:00Z',
-        is_own: false
-      }
-    ]
+  // Busca mensagens de uma conversa
+  const fetchMessages = async (otherUserId: string) => { // ✅ Corrigido: removed unused 'conversationId'
+    if (!user) return;
+
+    try {
+      const { data: messagesData, error: msgError } = await supabase
+        .from('messages')
+        .select(`
+          *,
+          sender:profiles!inner(username, avatar_url)
+        `)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`)
+        .order('created_at', { ascending: true });
+
+      if (msgError) throw msgError;
+
+      const formattedMessages: Message[] = (messagesData || []).map(msg => ({
+        id: msg.id,
+        sender_id: msg.sender_id,
+        content: msg.content,
+        created_at: msg.created_at,
+        is_own: msg.sender_id === user.id,
+      }));
+
+      setMessages(formattedMessages);
+    } catch (err) {
+      console.error('Erro ao buscar mensagens:', err);
+    }
+  };
+
+  // Escuta novas mensagens em tempo real
+  const setupRealtimeListener = (otherUserId: string) => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`messages-${user.id}-${otherUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id}))`
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          setMessages(prev => [
+            ...prev,
+            {
+              id: newMsg.id,
+              sender_id: newMsg.sender_id,
+              content: newMsg.content,
+              created_at: newMsg.created_at,
+              is_own: newMsg.sender_id === user.id,
+            }
+          ]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   };
 
   useEffect(() => {
@@ -140,66 +155,90 @@ const MessagesPage = () => {
   }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setConversations(mockConversations);
+    if (user) {
+      fetchConversations();
+    } else {
       setLoading(false);
-    };
+    }
+  }, [user]);
 
-    loadData();
-  }, []);
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const handleConversationClick = (conversation: Conversation) => {
     setSelectedConversation(conversation);
-    setMessages(mockMessages[conversation.other_user_id] || []);
+    fetchMessages(conversation.other_user_id); // ✅ Corrigido: pass only otherUserId
+    setupRealtimeListener(conversation.other_user_id);
     
-    // No mobile, ocultar lista quando selecionar conversa
     if (isMobileView) {
       setIsMobileView(false);
     }
   };
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !user) return;
 
-    const message: Message = {
-      id: Date.now().toString(),
-      sender_id: 'current',
-      content: newMessage.trim(),
-      created_at: new Date().toISOString(),
-      is_own: true
-    };
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedConversation.other_user_id,
+          content: newMessage.trim(),
+        });
 
-    setMessages([...messages, message]);
-    setNewMessage('');
+      if (error) throw error;
+
+      setNewMessage('');
+    } catch (err) {
+      console.error('Erro ao enviar mensagem:', err);
+      alert('Erro ao enviar mensagem. Tente novamente.');
+    }
   };
 
   const MenuFooter = () => (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
       <div className="flex justify-around py-2 px-4">
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/create')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
             <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
           </div>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
-          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button
+          onClick={() => navigate('/notifications')}
+          className="flex flex-col items-center justify-center p-2 text-black"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
           </svg>
         </button>
-        <button className="flex flex-col items-center justify-center p-2">
+        <button
+          onClick={() => navigate('/profile/me')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
           <div className="w-6 h-6 rounded-full bg-gray-300"></div>
         </button>
       </div>
@@ -225,8 +264,9 @@ const MessagesPage = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button 
-                    onClick={() => console.log('Voltar')}
+                    onClick={() => navigate(-1)}
                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="Voltar"
                   >
                     <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
@@ -234,7 +274,11 @@ const MessagesPage = () => {
                   </button>
                   <h1 className="text-lg font-semibold text-gray-900">Mensagens</h1>
                 </div>
-                <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <button 
+                  onClick={() => navigate('/messages/new')}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Nova mensagem"
+                >
                   <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                   </svg>
@@ -299,7 +343,11 @@ const MessagesPage = () => {
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-semibold">Mensagens</h1>
-                <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <button 
+                  onClick={() => navigate('/messages/new')}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Nova mensagem"
+                >
                   <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
                   </svg>
@@ -382,6 +430,7 @@ const MessagesPage = () => {
                       </div>
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input de mensagem */}
@@ -413,78 +462,10 @@ const MessagesPage = () => {
                     </svg>
                   </div>
                   <p className="text-gray-500 text-xl">Suas mensagens</p>
-                  <p className="text-gray-400 text-sm mt-2">Envie mensagens privadas para um amigo ou grupo</p>
+                  <p className="text-gray-400 text-sm mt-2">Selecione uma conversa para começar a conversar</p>
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Chat Individual Mobile */}
-      {!isMobileView && selectedConversation && window.innerWidth < 768 && (
-        <div className="fixed inset-0 bg-white z-50 flex flex-col">
-          {/* Header */}
-          <div className="bg-white p-4 border-b border-gray-200 flex items-center gap-3">
-            <button 
-              onClick={() => setIsMobileView(true)}
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <svg className="w-6 h-6 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-              </svg>
-            </button>
-            <img
-              src={selectedConversation.other_user.avatar_url}
-              alt={selectedConversation.other_user.full_name}
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <div>
-              <h2 className="font-semibold text-gray-900">{selectedConversation.other_user.username}</h2>
-              {selectedConversation.other_user.is_online && (
-                <p className="text-xs text-green-500">Online</p>
-              )}
-            </div>
-          </div>
-
-          {/* Mensagens */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.is_own ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-2xl ${
-                    message.is_own
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-900'
-                  }`}
-                >
-                  <p className="text-sm">{message.content}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Input de mensagem */}
-          <div className="bg-white p-4 border-t border-gray-200">
-            <form onSubmit={handleSendMessage} className="flex gap-3">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Digite uma mensagem..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-full outline-none focus:border-blue-500 transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={!newMessage.trim()}
-                className="px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                Enviar
-              </button>
-            </form>
           </div>
         </div>
       )}
