@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -16,17 +16,19 @@ import SavedPostsPage from './pages/SavedPostsPage';
 
 function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <AuthProvider>
         <NotificationProvider>
           <div className="min-h-screen bg-white">
             <Routes>
+              {/* Rota raiz leva ao login por padrão */}
+              <Route path="/" element={<LoginPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/map" element={<MapPage />} />
-              
-              {/* Rotas protegidas usando layout wrapper */}
+
+              {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
-                <Route index element={<HomePage />} />
+                <Route path="/home" element={<HomePage />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path="/explore" element={<ExplorePage />} />
                 <Route path="/messages/*" element={<MessagesPage />} />
@@ -39,7 +41,7 @@ function App() {
           </div>
         </NotificationProvider>
       </AuthProvider>
-    </Router>
+    </BrowserRouter>
   );
 }
 
