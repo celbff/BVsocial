@@ -28,6 +28,7 @@ function App() {
 
               {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
+                <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
                 <Route path="/home" element={<HomePage />} />
                 <Route path="/profile/:username" element={<ProfilePage />} />
                 <Route path="/explore" element={<ExplorePage />} />
