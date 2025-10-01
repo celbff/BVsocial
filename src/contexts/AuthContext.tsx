@@ -33,17 +33,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     getSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    // Correção: pega o listener diretamente, sem desestruturar data
+    const authListener = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-    // Verifica se subscription existe antes de usar
+    // Limpeza correta do listener
     return () => {
-      authListener?.subscription?.unsubscribe?.();
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
