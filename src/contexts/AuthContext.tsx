@@ -19,22 +19,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const getSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setSession(data?.session ?? null);
+        setUser(data?.session?.user ?? null);
+      } catch (err) {
+        console.error('Erro ao recuperar sessão:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
 
+    // Verifica se subscription existe antes de usar
     return () => {
-      subscription.unsubscribe();
+      authListener?.subscription?.unsubscribe?.();
     };
   }, []);
 
