@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Recupera a sessão atual
     const getSession = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
@@ -33,19 +34,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     getSession();
 
-    // Novo listener conforme Supabase atual
+    // Listener atualizado do Supabase
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Limpeza correta
+    // Limpeza correta do listener
     return () => {
       authListener.unsubscribe();
     };
   }, []);
 
+  // Função de logout
   const signOut = async () => {
     await supabase.auth.signOut();
   };
@@ -57,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// Hook de acesso rápido
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error('useAuth must be used within AuthProvider');
