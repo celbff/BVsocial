@@ -16,8 +16,7 @@ import SavedPostsPage from './pages/SavedPostsPage';
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
+       <AuthProvider>
         <NotificationProvider>
           <div className="min-h-screen bg-white">
             <Routes>
