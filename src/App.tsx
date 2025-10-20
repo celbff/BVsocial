@@ -22,9 +22,10 @@ function App() {
           <div className="min-h-screen bg-white">
             <Routes>
               {/* Rota raiz leva ao login por padrão */}
-              <Route path="/" element={<LoginPage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/map" element={<MapPage />} />
+              <Route element={<ProtectedRoute />} />
+              <Route path="/" element={<HomePage />} />
+              <Route path="/home" element={<HomePage />} />
 
               {/* Rotas protegidas */}
               <Route element={<ProtectedRoute />}>
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/create" element={<CreatePostPage />} />
                 <Route path="/saved" element={<SavedPostsPage />} />
+                <Route path="/map" element={<MapPage />} />
                 <Route path="/subscription" element={<SubscriptionPage />} />
               </Route>
             </Routes>
