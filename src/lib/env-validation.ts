@@ -10,6 +10,6 @@ export function validateEnv() {
   const missing = requiredEnvVars.filter(key => !import.meta.env[key])
 
   if (missing.length > 0) {
-    throw new Error(`Missing required environment variables> ${missing.join(',')} `)
+    throw new Error(`Missing required environment variables: ${missing.join(',')} `)
   }
 }
