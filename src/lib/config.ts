@@ -34,9 +34,4 @@ export const config = {
     apiLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true',
     showErrorDetails: import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true',
   }
-
-    app: {
-    url: import.meta.env.VITE_APP_URL || window.location.origin,
-    name: import.meta.env.VITE_APP_NAME || 'Bella Vitta Social',
-  }
 }
