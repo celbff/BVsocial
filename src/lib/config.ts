@@ -30,6 +30,10 @@ export const config = {
 
   features: {
     stories: import.meta.env.VITE_ENABLE_STORIES === 'true',
+    messages: import.meta.env.VITE_ENABLE_MESSAGES === 'true',
+    notifications: import.meta.env.VITE_ENABLE_NOTIFICATIONS === 'true',
+    maps: import.meta.env.VITE_ENABLE_MAPS === 'true',
+    darkMode: import.meta.env.VITE_ENABLE_DARK_MODE === 'true',
     reduxDevTools: import.meta.env.VITE_ENABLE_REDUX_DEVTOOLS === 'true',
     apiLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true',
     showErrorDetails: import.meta.env.VITE_SHOW_ERROR_DETAILS === 'true',
