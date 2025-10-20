@@ -9,7 +9,7 @@ export const config = {
   
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL,
-    anonkey: import.metal.env.VITE_SUPABASE_ANON_KEY,
+    anonkey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   },
   
   storage: {
