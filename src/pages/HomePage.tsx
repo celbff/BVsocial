@@ -34,6 +34,51 @@ interface Post {
   is_verified: boolean;
 }
 
+  const MenuFooter = React.memo (() => (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
+      <div className="flex justify-around py-2 px-4">
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center justify-center p-2 text-black"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M22 23H2V9c0-1.1.9-2 2-2h1.3l1.26-2.18c.13-.23.37-.38.64-.38h6.6c.27 0 .51.15.64.38L15.7 7H17c1.1 0 2 .9 2 2v14z" stroke="none"/>
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate('/explore')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate('/create')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
+            <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/notifications')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+          </svg>
+        </button>
+        <button
+          onClick={() => navigate('/profile/me')}
+          className="flex flex-col items-center justify-center p-2 text-gray-700"
+        >
+          <div className="w-6 h-6 rounded-full bg-gray-300"></div>
+        </button>
+      </div>
+    </div>
+  ));
+
 const HomePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -191,51 +236,6 @@ const HomePage = () => {
       console.error('Erro ao salvar:', err);
     }
   };
-
-  const MenuFooter = () => (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-40">
-      <div className="flex justify-around py-2 px-4">
-        <button
-          onClick={() => navigate('/')}
-          className="flex flex-col items-center justify-center p-2 text-black"
-        >
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M22 23H2V9c0-1.1.9-2 2-2h1.3l1.26-2.18c.13-.23.37-.38.64-.38h6.6c.27 0 .51.15.64.38L15.7 7H17c1.1 0 2 .9 2 2v14z" stroke="none"/>
-          </svg>
-        </button>
-        <button
-          onClick={() => navigate('/explore')}
-          className="flex flex-col items-center justify-center p-2 text-gray-700"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-        </button>
-        <button
-          onClick={() => navigate('/create')}
-          className="flex flex-col items-center justify-center p-2 text-gray-700"
-        >
-          <div className="w-6 h-6 border-2 border-gray-700 rounded-sm flex items-center justify-center">
-            <div className="w-2 h-2 border border-gray-700 rounded-sm"></div>
-          </div>
-        </button>
-        <button
-          onClick={() => navigate('/notifications')}
-          className="flex flex-col items-center justify-center p-2 text-gray-700"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-          </svg>
-        </button>
-        <button
-          onClick={() => navigate('/profile/me')}
-          className="flex flex-col items-center justify-center p-2 text-gray-700"
-        >
-          <div className="w-6 h-6 rounded-full bg-gray-300"></div>
-        </button>
-      </div>
-    </div>
-  );
 
   const PostCard = ({ post }: { post: Post }) => (
     <div className="bg-white border-b-8 border-gray-100 md:border md:border-gray-200 md:rounded-lg md:mb-6">
