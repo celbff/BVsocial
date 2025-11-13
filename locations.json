@@ -1,0 +1,45 @@
+[
+    {
+        "name": "Centro Pop",
+        "address": "Av. José Bonifácio, 576 - Centro, Araraquara - SP",
+        "lat": -21.7915,
+        "lng": -48.1739,
+        "category": "servicos",
+        "details": "Serviço especializado para pessoas em situação de rua. Oferece alimentação, higiene e acompanhamento técnico."
+    },
+    {
+        "name": "Casa de acolhida \"Assad-Kan\"",
+        "address": "R. Castro Alves, 2697 - Vila Santana, Araraquara - SP",
+        "lat": -21.7993,
+        "lng": -48.1634,
+        "category": "servicos"
+    },
+    {
+        "name": "CRAS Central",
+        "address": "Localização aproximada via coordenadas",
+        "lat": -21.791541,
+        "lng": -48.173981,
+        "category": "servicos"
+    },
+    {
+        "name": "Associação São Pio (masculino)",
+        "address": "Localização aproximada via coordenadas",
+        "lat": -21.824324,
+        "lng": -48.203819,
+        "category": "apoio"
+    },
+    {
+        "name": "Associação São Pio (feminina)",
+        "address": "Localização aproximada via coordenadas",
+        "lat": -21.76656,
+        "lng": -48.17826,
+        "category": "apoio"
+    },
+    {
+        "name": "Fundo Social de Solidariedade",
+        "address": "R. Imac. Conceição, 3885 - Vila Yamada, Araraquara - SP",
+        "lat": -21.7758,
+        "lng": -48.1631,
+        "category": "doacao"
+    }
+]
